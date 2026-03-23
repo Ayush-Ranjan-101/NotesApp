@@ -12,7 +12,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 
     user.accessToken = accessToken;
     user.refreshToken = refreshToken;
-    await user.save({validateBeforeSave: false});
+    await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
   } catch (error) {
     console.error("DEBUG ERROR", error);
@@ -55,7 +55,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-  }
+  };
 
   return res
     .status(201)
