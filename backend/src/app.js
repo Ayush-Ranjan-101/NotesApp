@@ -21,12 +21,10 @@ app.use(
 
 import healthCheckRouter from "./routes/healthCheckRouter.routes.js";
 import authRouter from "./routes/auth.routes.js";
+import notesRouter from "./routes/note.routes.js";
 
 app.use("/api/v1/healthCheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
-
-app.get("/", (req, res) => {
-  res.send("Hello world :)");
-});
+app.use("/api/v1/notes", notesRouter);
 
 export default app;
