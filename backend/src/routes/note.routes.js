@@ -1,5 +1,10 @@
 import { Router } from "express";
 
+import { validate } from "../middlewares/validate.middlewares.js";
+import {
+  createNoteVSchema,
+  updateNoteVSchema,
+} from "../validators/noteValidator.validators.js";
 import {
   getNotes,
   createNote,
@@ -14,9 +19,12 @@ const router = Router();
 router.use(verifyJWT);
 
 // General routes (Base: /api/v1/notes)
-router.route("/").get(getNotes).post(createNote);
+router.route("/").get(getNotes).post(validate(createNoteVSchema), createNote);
 
 // Specific resource routes (Base: /api/v1/notes/:noteId)
-router.route("/:noteId").patch(updateNote).delete(deleteNote);
+router
+  .route("/:noteId")
+  .patch(validate(updateNoteVSchema), updateNote)
+  .delete(deleteNote);
 
 export default router;

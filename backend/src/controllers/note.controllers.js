@@ -63,7 +63,9 @@ const updateNote = asyncHandler(async (req, res) => {
 const deleteNote = asyncHandler(async (req, res) => {
   const { noteId } = req.params;
 
-  const deletedNote = await Note.findByIdAndDelete(new mongoose.Types.ObjectId(noteId));
+  const deletedNote = await Note.findByIdAndDelete(
+    new mongoose.Types.ObjectId(noteId),
+  );
 
   if (!deletedNote) {
     throw new ApiError(404, "Note not found");
