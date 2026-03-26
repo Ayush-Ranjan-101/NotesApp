@@ -7,7 +7,7 @@ const registerVSchema = z
       .trim()
       .min(2, "Username must be at least 2 character long")
       .max(15, "Username is too long"),
-    email: z.string().email("Invalid email format"),
+    email: z.string().trim().email("Invalid email format").lowercase(),
     password: z.string().min(6, "Password must be at least 6 characters"),
   })
   .strict();
@@ -15,9 +15,18 @@ const registerVSchema = z
 const loginVSchema = z
   .object({
     userName: z.string().trim().optional(),
-    email: z.string().email("Invalid email format"),
-    password: z.string().min(1, "Password is required"),
+    email: z
+      .string()
+      .trim()
+      .email("Invalid email format")
+      .lowercase()
+      .optional(),
+    password: z.string().min(6, "Password is at least 6 characters"),
   })
-  .strict();
+  .strict()
+  .refine((data) => data.email || data.userName, {
+    message: "Please provide either a username or an email",
+    path: ["username/email"],
+  });
 
 export { registerVSchema, loginVSchema };

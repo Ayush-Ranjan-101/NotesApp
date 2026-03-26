@@ -72,12 +72,10 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password, userName } = req.body;
-
-  if (!email) {
-    throw new ApiError(400, "Missing credentials");
-  }
-
-  const user = await User.findOne({ email });
+  
+  const user = await User.findOne({
+    $or: [{ userName }, { email }],
+  });
 
   if (!user) {
     throw new ApiError(400, "User does not exists");
@@ -133,9 +131,13 @@ const logoutUser = asyncHandler(async (req, res) => {
     },
   );
 
+  if (!user) {
+    throw new ApiError(404, "User not found or already logged out");
+  }
+
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
   };
 
   return res
