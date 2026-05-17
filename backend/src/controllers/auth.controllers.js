@@ -3,6 +3,10 @@ import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import jwt from "jsonwebtoken";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -72,7 +76,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password, userName } = req.body;
-  
+
   const user = await User.findOne({
     $or: [{ userName }, { email }],
   });
@@ -127,7 +131,7 @@ const logoutUser = asyncHandler(async (req, res) => {
       },
     },
     {
-      new: true,
+      returnDocument: "after",
     },
   );
 
@@ -147,4 +151,74 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
-export { registerUser, loginUser, logoutUser };
+const updateProfile = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const profilePicLocalPath = req.files?.profilePic?.[0]?.path;
+
+  if (!profilePicLocalPath) {
+    throw new ApiError(400, "Profile picture file is required");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const prevProfilePic = user.profilePic;
+  if (prevProfilePic) {
+    await deleteFromCloudinary(prevProfilePic);
+  }
+
+  const uploadResponse = await uploadOnCloudinary(profilePicLocalPath);
+
+  if (!uploadResponse || !uploadResponse.url) {
+    throw new ApiError(400, "Error while uploading profile picture");
+  }
+
+  user.profilePic = uploadResponse.url;
+  await user.save({ validateBeforeSave: false });
+
+  const updatedUser = await User.findById(userId).select(
+    "-password -refreshToken -accessToken",
+  );
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { user: updatedUser },
+      "Profile pic updated successfully",
+    ),
+  );
+});
+
+const deleteProfile = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const prevProfilePic = user.profilePic;
+  if (prevProfilePic) {
+    await deleteFromCloudinary(prevProfilePic);
+  }
+
+  user.profilePic = "";
+  await user.save({ validateBeforeSave: false });
+
+  const updatedUser = await User.findById(userId).select(
+    "-password -refreshToken -accessToken",
+  );
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { user: updatedUser },
+      "Profile picture deleted successfully",
+    ),
+  );
+});
+
+export { registerUser, loginUser, logoutUser, updateProfile, deleteProfile };
